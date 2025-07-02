@@ -1,0 +1,145 @@
+# Mengatasi Error `ENOTEMPTY`
+
+Error `ENONEMPTY` biasanya muncul ketika kamu menjalankan perintah seperti `npm install`, `npm init`, atau `npm create` ke folder yang **sudah berisi file atau folder lain**, dan perintah itu **tidak boleh menimpa folder yang tidak kosong**.
+
+---
+
+### 🔍 Contoh Error
+
+```bash
+pi@raspberrypi:~/ebookcraft-mardown $ npm i
+npm ERR! code ENOTEMPTY
+npm ERR! syscall rename
+npm ERR! path /home/pi/ebookcraft-mardown/node_modules/ajv
+npm ERR! dest /home/pi/ebookcraft-mardown/node_modules/.ajv-yq7K23Oe
+npm ERR! errno -39
+npm ERR! ENOTEMPTY: directory not empty, rename '/home/pi/ebookcraft-mardown/node_modules/ajv' -> '/home/pi/ebookcraft-mardown/node_modules/.ajv-yq7K23Oe'
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home/pi/.npm/_logs/2025-06-11T17_45_50_533Z-debug-0.log
+```
+
+Artinya: direktori target sudah tidak kosong, dan proses gak mau "nge-overwrite" isinya.
+
+---
+
+### ✅ Solusi
+
+#### 💡 1. **Hapus isi folder tersebut (jika tidak penting)**
+
+Kalau kamu tidak butuh file di dalam folder itu:
+
+```bash
+rm -rf nama-folder
+```
+
+Lalu jalankan ulang:
+
+```bash
+npx create-react-app nama-folder
+```
+
+Atau:
+
+```bash
+npm init ...
+```
+
+#### 💡 2. **Gunakan folder kosong**
+
+Coba buat folder baru:
+
+```bash
+mkdir proyek-baru
+cd proyek-baru
+npm init -y
+```
+
+#### 💡 3. **Cek isi folder yang bikin error**
+
+Kadang cuma ada `.DS_Store`, `Thumbs.db`, atau `.git` yang nyangkut.
+
+Cek manual:
+
+```bash
+ls -a
+```
+
+Lalu hapus file yang bikin masalah:
+
+```bash
+rm -rf .DS_Store .git
+```
+
+---
+
+### 🚨 Hati-hati!
+
+Jangan hapus folder kalau kamu belum yakin isinya tidak penting. Backup dulu kalau perlu.
+
+
+Oke, error `ENONEMPTY` seperti ini:
+
+```
+ENONEMPTY: directory not empty, rename '/home/pi/ebookcraft/node_modules/ajv' -> '/home/pi/ebookcraft/node_modules/.ajv-yq7k230e'
+```
+
+artinya saat `npm` mencoba melakukan **rename** (biasanya saat update package), dia tidak bisa rename folder `ajv` karena folder target `.ajv-yq7k230e` **sudah ada dan tidak kosong**.
+
+Biasanya ini terjadi karena:
+
+* Instalasi sebelumnya gagal dan meninggalkan folder `.ajv-*`
+* Proses `npm install` sebelumnya dimatikan paksa
+* Ada file/folder yang nge-lock (terutama di Raspberry Pi bisa jadi karena file system lambat)
+
+---
+
+### ✅ Solusi Langkah Demi Langkah
+
+#### 1. **Hapus folder `node_modules` dan `package-lock.json`**
+
+```bash
+rm -rf node_modules package-lock.json
+```
+
+#### 2. **Bersihkan cache npm (opsional tapi disarankan)**
+
+```bash
+npm cache clean --force
+```
+
+#### 3. **Install ulang dependensi**
+
+```bash
+npm install
+```
+
+---
+
+### 🧠 Catatan Khusus untuk Raspberry Pi
+
+Karena kamu pakai Raspberry Pi 3, yang storagenya mungkin pakai microSD:
+
+* Proses `npm install` bisa lambat
+* File system I/O bisa error (kadang corrupt folder `.ajv-*` karena mati listrik atau ketarik paksa)
+
+Kamu bisa pastikan filesystem sehat dengan:
+
+```bash
+df -h        # Cek apakah storage penuh
+top / htop   # Cek apakah CPU/mem penuh
+```
+
+---
+
+### Bonus: Gunakan `--legacy-peer-deps` kalau masih gagal
+
+Beberapa Raspberry Pi node environments error karena peer dep clash:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+---
+
+Kalau error-nya masih muncul setelah langkah-langkah di atas, kirim output lengkap dari terminal dan isi direktori `node_modules` saat error muncul (pakai `ls -la node_modules/`), saya bantu bedah lebih lanjut.

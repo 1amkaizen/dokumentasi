@@ -1,0 +1,387 @@
+# Membangun platform pembuatan ebook dari markdown denngan vite + react
+
+
+---
+
+## 📘 Gambaran Umum Proyek yang Akan di Bangun
+
+Tujuan kamu mirip **GitBook**, tapi lebih simpel dan bisa diakses langsung via web (tanpa ribet struktur folder manual). Fokusnya adalah:
+
+1. **Editor markdown berbasis web** (WYSIWYG optional).
+2. **Live preview** sebelah kanan.
+3. **Struktur halaman otomatis**: bikin "Bab" atau "Chapter" hanya dengan klik/tambah, tak perlu mikir file/folder manual.
+4. **Navigasi (TOC / Table of Contents)** otomatis.
+5. **Ekspor** ke format PDF, EPUB, atau bahkan HTML statis.
+6. **Disimpan di cloud** (Supabase cocok).
+7. **Multiuser (bisa login, bikin proyek, dll)**.
+
+---
+
+## ⚙️ Stack Teknologi yang Direkomendasikan
+
+Karena kamu terbiasa dengan Django, tapi ingin coba versi web modern, berikut dua pendekatan:
+
+### ✅ **Frontend (React + Vite + Tailwind CSS)**
+
+* **Vite** sangat ringan dan cepat.
+* **React** sangat cocok buat UI interaktif (editor, live preview, navigasi).
+* **Tailwind CSS** buat styling yang cepat dan konsisten.
+* Gunakan `react-markdown` + `remark-gfm` buat preview markdown.
+
+### ✅ **Backend (Supabase atau Django)**
+
+* Kalau kamu mau cepat dan simpel: **Supabase** (auth + database + storage).
+* Kalau kamu tetap ingin Django: bisa jadikan Django sebagai backend API (REST/GraphQL), dan frontend pakai React.
+
+---
+
+## 🧩 Fitur Utama Modul yang Akan Kamu Buat
+
+| Modul                | Fungsi                                               | Teknologi                              |
+| -------------------- | ---------------------------------------------------- | -------------------------------------- |
+| 📝 Editor Markdown   | Tulis konten, bisa tambah bold, italic, heading, dll | `react-markdown`, custom toolbar       |
+| 🔍 Live Preview      | Tampilkan preview langsung dari markdown             | `react-markdown` + Tailwind            |
+| 📚 Struktur Chapter  | Tambah Chapter/Bab seperti di GitBook                | UI drag & drop, auto create DB record  |
+| 🧾 TOC Otomatis      | Menampilkan struktur bab dan sub-bab                 | Berdasar metadata                      |
+| ☁️ Simpan Otomatis   | Simpan konten tiap interval / ke Supabase            | Supabase atau Django API               |
+| 📤 Ekspor            | PDF, EPUB                                            | Gunakan `react-pdf`, atau Node backend |
+| 👤 Auth              | Login / Register                                     | Supabase Auth / Django AllAuth         |
+| 📦 Dashboard Project | Buat dan kelola proyek ebook                         | UI React + DB                          |
+
+---
+
+## 🔧 Fase Pengembangan (Roadmap Awal)
+
+### 🧪 Fase 1 – Proof of Concept (POC)
+
+* [x] React + Vite + Tailwind Setup
+* [x] Komponen editor markdown (pakai `react-markdown` atau `textarea` + toolbar)
+* [x] Live Preview
+* [x] Simpan konten ke localStorage
+
+### 🧱 Fase 2 – Struktur Chapter/Page
+
+* [ ] Buat komponen TOC/chapter list
+* [ ] Tambah/move/hapus chapter
+* [ ] Hubungkan dengan konten markdown tiap halaman
+
+### ☁️ Fase 3 – Backend
+
+* [ ] Simpan ke Supabase (auth + DB)
+* [ ] Atau Django REST backend (jika lebih nyaman)
+* [ ] CRUD konten dan chapter dari database
+
+### 📦 Fase 4 – Ekspor dan Akhir
+
+* [ ] Ekspor ke PDF/EPUB
+* [ ] Buat UI Dashboard user
+* [ ] Tambahkan fitur publikasi/share
+
+---
+
+## ❓Bagaimana Kalau Belum Pernah Pakai Vite/React?
+
+Tenang, saya bisa bantu kamu step-by-step. Karena kamu sudah paham konsep Django dan sudah sering ngoding, kamu pasti cepat paham React.
+
+Kalau kamu mau, saya bisa bantu:
+
+* Setup awal proyek dengan React + Vite
+* Buat struktur folder dan komponen
+* Buat editor markdown dan preview-nya
+* Tambah fitur chapter dan TOC
+* Integrasi ke backend (Supabase atau Django)
+
+---
+
+## 🧠 Saran Akhir
+
+> Fokus dulu ke fitur paling kecil yang bisa dipakai: markdown editor + preview + tambah halaman/chapter.
+> Lalu kembangkan bertahap sampai jadi platform penuh.
+
+Mantap, Zen! Kita mulai dari nol. Saya akan bantu kamu **step-by-step** bangun proyek web ini dengan **Vite + React + Tailwind CSS**, dan struktur halaman seperti yang kamu mau:
+
+## 🌐 Struktur Halaman yang Akan Kita Bangun
+
+```
+/ (Landing page)
+/login (Halaman Login)
+/register (Halaman Register)
+/dashboard (Halaman utama user dengan sidebar collapse)
+```
+
+---
+
+## 🧱 Langkah 1 – Inisialisasi Proyek Vite + React + Tailwind
+
+### 📦 1.1. Buat Proyek Baru
+
+Buka terminal dan ketik:
+
+```bash
+npm create vite@latest bookcraft-markdown-forge --template react
+cd bookcraft-markdown-forge
+npm install
+```
+
+### 🎨 1.2. Install Tailwind CSS
+
+Masih di folder proyek, jalankan:
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+### ✏️ 1.3. Konfigurasi `tailwind.config.js`
+
+Ubah file ini:
+
+```js
+// tailwind.config.js
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+### 🖌️ 1.4. Tambahkan Tailwind ke `index.css`
+
+Edit `src/index.css`:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+---
+
+## 📁 Struktur Folder yang Kita Akan Bangun
+
+```
+src/
+│
+├── pages/
+│   ├── Home.tsx
+│   ├── Login.tsx
+│   ├── Register.tsx
+│   └── Dashboard.tsx
+│
+├── components/
+│   ├── Sidebar.tsx
+│   ├── Navbar.tsx
+│   └── Editor.tsx (nanti)
+│
+├── App.tsx
+└── main.tsx
+```
+
+---
+
+## 🔁 Langkah 2 – Tambahkan Routing
+
+Install React Router:
+
+```bash
+npm install react-router-dom
+```
+
+Edit `main.tsx`:
+
+```tsx
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import { BrowserRouter } from 'react-router-dom'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+)
+```
+
+Edit `App.tsx`:
+
+```tsx
+import { Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+    </Routes>
+  )
+}
+```
+
+---
+
+## 🏗️ Langkah Selanjutnya
+
+1. Buat isi file `Home.tsx`, `Login.tsx`, dll – bisa placeholder dulu.
+2. Bangun layout dashboard dengan sidebar collapse.
+3. Lanjut ke editor markdown.
+
+
+Sip, Zen! Kita lanjut. Sekarang kita akan:
+
+1. 🧱 Membuat halaman dasar: Home, Login, Register, Dashboard.
+2. 🧪 Tambahkan placeholder isi di masing-masing.
+3. 🧭 Buat **Sidebar collapse layout** untuk dashboard.
+
+---
+
+## ✍️ 1. Buat File `Home.tsx`, `Login.tsx`, `Register.tsx`, `Dashboard.tsx`
+
+### 🔹 `src/pages/Home.tsx`
+
+```tsx
+export default function Home() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      <h1 className="text-4xl font-bold mb-4">Selamat datang di BookCraft</h1>
+      <p className="text-lg text-gray-600">Platform web untuk menulis dan menerbitkan ebook Markdown.</p>
+    </div>
+  )
+}
+```
+
+### 🔹 `src/pages/Login.tsx`
+
+```tsx
+export default function Login() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6">Login</h2>
+        <form className="space-y-4">
+          <input className="w-full border p-2 rounded" type="email" placeholder="Email" />
+          <input className="w-full border p-2 rounded" type="password" placeholder="Password" />
+          <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Masuk</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+```
+
+### 🔹 `src/pages/Register.tsx`
+
+```tsx
+export default function Register() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6">Daftar</h2>
+        <form className="space-y-4">
+          <input className="w-full border p-2 rounded" type="text" placeholder="Nama" />
+          <input className="w-full border p-2 rounded" type="email" placeholder="Email" />
+          <input className="w-full border p-2 rounded" type="password" placeholder="Password" />
+          <button className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Daftar</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## 🧰 2. Buat Dashboard One-Page dengan Sidebar Collapse
+
+### 🔹 Buat `components/Sidebar.tsx`
+
+```tsx
+import { useState } from 'react'
+import { FaBook, FaBars, FaCog } from 'react-icons/fa'
+
+export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false)
+
+  return (
+    <div className={`bg-gray-800 text-white h-screen p-4 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="mb-6 text-xl"
+      >
+        <FaBars />
+      </button>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <FaBook />
+          {!collapsed && <span>Proyek Saya</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <FaCog />
+          {!collapsed && <span>Pengaturan</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+### 🔹 Tambahkan `Dashboard.tsx`
+
+```tsx
+import Sidebar from '../components/Sidebar'
+
+export default function Dashboard() {
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex-1 p-6 overflow-y-auto bg-gray-100">
+        <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+        <p>Ini adalah halaman utama pengguna untuk mengelola ebook.</p>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## 🧪 Tes Aplikasi
+
+Sekarang kamu bisa jalankan:
+
+```bash
+npm run dev
+```
+
+Dan buka:
+
+* `/` untuk halaman home
+* `/login` untuk login
+* `/register` untuk daftar
+* `/dashboard` untuk dashboard dengan sidebar collapse
+
+---
+
+## 🛠️ Tahap Berikutnya
+
+Kalau ini sudah jalan, berikutnya kita bisa lanjut:
+
+1. Menambahkan fitur **auth Supabase** (atau pakai dummy dulu).
+2. Menambahkan fitur buat proyek ebook dan chapter.
+3. Menyisipkan editor markdown dan live preview.
+
+
+

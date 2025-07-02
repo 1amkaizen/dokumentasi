@@ -1,0 +1,307 @@
+### 1. Struktur Proyek yang Diperbarui
+
+1.  **Direktori `templates`:**
+
+    Pastikan Anda memiliki struktur direktori `templates` yang benar di dalam proyek Django Anda. Biasanya, ini terlihat seperti:
+
+```
+    bughunter/
+        manage.py
+        bughunter/
+            __init__.py
+            settings.py
+            urls.py
+            ...
+        scanner/
+            ...
+        users/
+            ...
+        templates/
+            base.html
+            landing.html
+            dashboard.html
+            scanner/
+                scan_dashboard.html
+                scan_results.html
+                create_scan_task.html
+            users/
+                login.html
+                register.html
+```
+
+### 2. Membuat *Landing Page*
+
+1.  **Template `templates/landing.html`:**
+
+    Buat file `templates/landing.html` dengan konten *landing page* Anda.
+
+```html 
+    project="BugHunterPlatform" file="landing.html" version=1
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Bug Hunter Platform</title>
+    </head>
+    <body>
+        <h1>Selamat Datang di Bug Hunter Platform</h1>
+        <p>Platform untuk membantu Anda menemukan dan memperbaiki kerentanan keamanan.</p>
+        <a href="{% url 'users:register' %}">Daftar</a>
+        <a href="{% url 'login' %}">Masuk</a>
+    </body>
+    </html>
+```
+
+2.  **View untuk *Landing Page*:**
+
+    Tambahkan view di `bughunter/views.py` (buat file ini jika belum ada).
+    
+```python 
+    project="BugHunterPlatform" file="views.py" version=1
+    from django.shortcuts import render
+
+    def landing_page(request):
+        return render(request, 'landing.html')
+```
+
+3.  **URL untuk *Landing Page*:**
+
+    Tambahkan URL di `bughunter/urls.py`.
+
+```python 
+    project="BugHunterPlatform" file="urls.py" version=2
+    from django.contrib import admin
+    from django.urls import path, include
+    from . import views  # Import view yang baru dibuat
+
+    urlpatterns = [
+        path('admin/', admin.site.urls),
+        path('scanner/', include('scanner.urls')),
+        path('users/', include('users.urls')),
+        path('accounts/', include('django.contrib.auth.urls')),
+        path('', views.landing_page, name='landing_page'),  # URL untuk landing page
+    ]
+```
+
+### 3. Membuat *Dashboard One-Page*
+
+1.  **Template `templates/dashboard.html`:**
+
+    Buat file `templates/dashboard.html` dengan struktur *dashboard* Anda. Ini akan mencakup *sidebar* dan area konten utama.
+
+```html 
+    project="BugHunterPlatform" file="dashboard.html" version=1
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Dashboard</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                height: 100vh;
+            }
+            .sidebar {
+                width: 200px;
+                background-color: #f0f0f0;
+                padding: 20px;
+            }
+            .content {
+                flex: 1;
+                padding: 20px;
+            }
+            .sidebar ul {
+                list-style: none;
+                padding: 0;
+            }
+            .sidebar li {
+                margin-bottom: 10px;
+            }
+            .sidebar a {
+                text-decoration: none;
+                color: #333;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sidebar">
+            <h2>Menu</h2>
+            <ul>
+                <li><a href="{% url 'scanner:scan_dashboard' %}">Scan Dashboard</a></li>
+                <li><a href="{% url 'scanner:create_scan_task' %}">Create Scan Task</a></li>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+        </div>
+        <div class="content">
+            {% block content %}
+                <h1>Selamat Datang di Dashboard</h1>
+                <p>Pilih menu di samping untuk memulai.</p>
+            {% endblock %}
+        </div>
+    </body>
+    </html>
+```
+
+2.  **View untuk *Dashboard*:**
+
+    Buat view di `scanner/views.py` untuk menampilkan *dashboard*.
+
+```python 
+    project="BugHunterPlatform" file="views.py" version=4
+    from django.shortcuts import render, redirect
+    from django.contrib.auth.decorators import login_required
+    from .models import ScanTask, ScanResult
+    from .forms import ScanTaskForm
+    import subprocess
+    import json
+    import xmltodict
+
+    @login_required
+    def dashboard(request):
+        return render(request, 'dashboard.html')
+
+    @login_required
+    def scan_dashboard(request):
+        scan_tasks = ScanTask.objects.filter(user=request.user).order_by('-start_time')
+        return render(request, 'scanner/scan_dashboard.html', {'scan_tasks': scan_tasks})
+
+    @login_required
+    def create_scan_task(request):
+        if request.method == 'POST':
+            form = ScanTaskForm(request.POST)
+            if form.is_valid():
+                scan_task = form.save(commit=False)
+                scan_task.user = request.user
+                scan_task.save()
+                # Memulai tugas pemindaian di latar belakang (contoh sederhana)
+                start_scan(scan_task.id)
+                return redirect('scanner:scan_dashboard')
+        else:
+            form = ScanTaskForm()
+        return render(request, 'scanner/create_scan_task.html', {'form': form})
+
+    # Fungsi-fungsi lain (start_scan, run_nmap_scan, run_nikto_scan, scan_results, dll.)
+```
+
+3.  **URL untuk *Dashboard*:**
+
+    Tambahkan URL di `scanner/urls.py`.
+
+```python 
+    project="BugHunterPlatform" file="urls.py" version=2
+    from django.urls import path
+    from . import views
+
+    app_name = 'scanner'
+
+    urlpatterns = [
+        path('dashboard/', views.dashboard, name='dashboard'),  # URL untuk dashboard
+        path('scan_dashboard/', views.scan_dashboard, name='scan_dashboard'),
+        path('create/', views.create_scan_task, name='create_scan_task'),
+        path('results/<int:scan_task_id>/', views.scan_results, name='scan_results'),
+    ]
+```
+
+### 4. Mengarahkan Pengguna Setelah Login
+
+1.  **Modifikasi `users/views.py`:**
+
+    Setelah pengguna berhasil login, arahkan mereka ke *dashboard*.
+
+```python 
+    project="BugHunterPlatform" file="views.py" version=2
+    from django.shortcuts import render, redirect
+    from django.contrib.auth import login, logout
+    from django.contrib.auth.forms import UserCreationForm
+    from django.contrib.auth.views import LoginView
+
+    def register(request):
+        if request.method == 'POST':
+            form = UserCreationForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                login(request, user)
+                return redirect('scanner:dashboard')  # Arahkan ke dashboard
+        else:
+            form = UserCreationForm()
+        return render(request, 'users/register.html', {'form': form})
+
+    class CustomLoginView(LoginView):
+        template_name = 'users/login.html'
+
+        def get_success_url(self):
+            return '/scanner/dashboard/'  # Arahkan ke dashboard
+
+    def logout_view(request):
+        logout(request)
+        return redirect('login')
+```
+
+2.  **Modifikasi `users/urls.py`:**
+
+    Gunakan `CustomLoginView` di `users/urls.py`.
+
+```python 
+    project="BugHunterPlatform" file="urls.py" version=2
+    from django.urls import path
+    from . import views
+    from .views import CustomLoginView
+    from django.contrib.auth.views import LoginView
+
+    urlpatterns = [
+        path('register/', views.register, name='register'),
+        path('login/', CustomLoginView.as_view(), name='login'),
+        path('logout/', views.logout_view, name='logout'),
+    ]
+```
+
+### 5. Memodifikasi Template `scan_dashboard.html` dan `create_scan_task.html`
+
+Untuk memastikan bahwa halaman *scan dashboard* dan *create scan task* ditampilkan di dalam *dashboard*, Anda perlu memperbarui template tersebut untuk memperluas `dashboard.html`.
+
+1.  **Modifikasi `scanner/templates/scanner/scan_dashboard.html`:**
+
+```html 
+project="BugHunterPlatform" file="scan_dashboard.html" version=2
+    {% extends 'dashboard.html' %}
+
+    {% block content %}
+        <h1>Scan Dashboard</h1>
+        <a href="{% url 'scanner:create_scan_task' %}">Create New Scan Task</a>
+        <ul>
+            {% for task in scan_tasks %}
+                <li>
+                    {{ task.target_url }} - {{ task.scan_type }} - {{ task.status }}
+                    <a href="{% url 'scanner:scan_results' task.id %}">View Results</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endblock %}
+```
+
+2.  **Modifikasi `scanner/templates/scanner/create_scan_task.html`:**
+
+```html 
+    project="BugHunterPlatform" file="create_scan_task.html" version=2
+    {% extends 'dashboard.html' %}
+
+    {% block content %}
+        <h1>Create Scan Task</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Create</button>
+        </form>
+    {% endblock %}
+```
+
+### 6. Penjelasan Kode
+
+*   **`landing.html`:** Halaman utama yang dilihat pengguna sebelum masuk atau mendaftar.
+*   **`dashboard.html`:** Template *one-page dashboard* dengan *sidebar* untuk navigasi.
+*   **`scanner/views.py`:** View untuk menampilkan *dashboard* dan mengintegrasikan fitur pemindaian.
+*   **`users/views.py`:** View untuk menangani pendaftaran dan *login*, serta mengarahkan pengguna ke *dashboard* setelah *login*.
+*   **URL Mapping:** URL yang sesuai untuk setiap halaman dan fungsi.
+
+Dengan mengikuti langkah-langkah ini, Anda akan memiliki struktur proyek yang terorganisir dengan *landing page* terpisah, *dashboard one-page* dengan *sidebar*, dan integrasi fitur pemindaian di dalam *dashboard*.

@@ -1,0 +1,159 @@
+# Mengatasi error `ERR_SOCKET_TIMEOUT`
+
+Masalah `ERR_SOCKET_TIMEOUT` atau `npm install` timeout biasanya disebabkan oleh salah satu dari beberapa hal berikut:
+
+Contoh Error
+
+```bash
+pi@raspberrypi:~/ebookcraft-mardown $ npm i
+npm ERR! code ERR_SOCKET_TIMEOUT
+npm ERR! errno ERR_SOCKET_TIMEOUT
+npm ERR! network Invalid response body while trying to fetch https://registry.npmjs.org/chalk: Socket timeout
+npm ERR! network This is a problem related to network connectivity.
+npm ERR! network In most cases you are behind a proxy or have bad network settings.
+npm ERR! network 
+npm ERR! network If you are behind a proxy, please make sure that the
+npm ERR! network 'proxy' config is set properly.  See: 'npm help config'
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home/pi/.npm/_logs/2025-06-11T17_58_24_647Z-debug-0.log
+
+```
+
+## 🔧 **Solusi Cepat dan Umum**
+
+1. **Gunakan registry alternatif (misalnya milik `yarn`)**
+
+```bash
+   npm set registry https://registry.npmmirror.com
+   npm i
+```
+
+2. **Perbesar waktu timeout default**
+
+```bash
+   npm set timeout=60000
+```
+
+3. **Gunakan jaringan stabil / ganti koneksi**
+
+   * Coba ganti ke koneksi Wi-Fi yang lebih stabil.
+   * Jika kamu pakai VPN, matikan dulu. Atau coba nyalakan VPN dan pilih server yang dekat (Singapura misalnya).
+
+---
+
+## 🧠 **Solusi Tambahan Jika Masih Error**
+
+### 1. **Bersihkan cache npm**
+
+Kadang `npm` ngeyel karena cache yang error:
+
+```bash
+npm cache clean --force
+```
+
+### 2. **Gunakan `--legacy-peer-deps` (jika konflik dependensi)**
+
+```bash
+npm i --legacy-peer-deps
+```
+
+### 3. **Gunakan `--network-timeout`**
+
+```bash
+npm install --network-timeout=100000
+```
+
+### 4. **Coba pakai Yarn**
+
+Kalau `npm` tetap ngeyel:
+
+```bash
+corepack enable
+yarn install
+```
+
+### 5. **Edit `.npmrc` (jika kamu sering ngalamin)**
+
+Buat atau edit file `~/.npmrc`, tambahkan:
+
+```
+registry=https://registry.npmmirror.com
+timeout=60000
+fetch-retries=5
+fetch-retry-factor=10
+fetch-retry-mintimeout=10000
+fetch-retry-maxtimeout=60000
+```
+
+---
+
+## 🧪 Cek manual (opsional)
+
+* Tes koneksi ke registry:
+
+```bash
+  curl https://registry.npmjs.org
+```
+* Kalau gagal, berarti masalahnya di koneksi ke registry NPM global (bisa karena DNS, firewall, atau ISP).
+
+---
+
+Kalau kamu dapat error seperti:
+
+```
+npm ERR! code ERR_INVALID_OPTION
+npm ERR! timeout is not a valid npm option
+```
+
+Itu karena `timeout` **bukan perintah CLI npm**, tapi **opsi konfigurasi** yang harus disetel dengan `npm config` atau `npm set`, **bukan ditulis langsung di command install**.
+
+---
+
+### ✅ Cara benar mengatur timeout:
+
+```bash
+npm set timeout=60000
+```
+
+Atau langsung via config file:
+
+```bash
+echo "timeout=60000" >> ~/.npmrc
+```
+
+Setelah itu baru bisa jalankan:
+
+```bash
+npm install
+```
+
+---
+
+### ❌ Cara salah (yang sering bikin error):
+
+```bash
+npm install --timeout=60000   # ❌ Ini yang bikin error
+```
+
+`npm install` **tidak mengenal** flag `--timeout`.
+
+---
+
+Kalau kamu tetap butuh ngatur timeout saat install, gunakan ini:
+
+```bash
+npm install --network-timeout=60000
+```
+
+---
+
+### Bonus: Cek hasil konfigurasi kamu
+
+```bash
+npm config list
+```
+
+Di situ kamu akan lihat apakah `timeout` atau registry sudah benar di-set.
+
+
