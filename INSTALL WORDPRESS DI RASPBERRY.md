@@ -89,7 +89,3 @@ Nanti URL `https://xxxxx.ngrok.io` bisa kamu share ke klien.
 * Untuk Telegram login, karena ngrok URL berubah, domainnya juga berubah → pastikan update **redirect URL** di konfigurasi bot Telegram.
 * Bisa pakai [ngrok reserved domain](https://dashboard.ngrok.com/cloud-edge/domains) (berbayar) kalau mau domain tetap.
 
----
-
-Kalau kamu mau backup database WordPress atau auto-start ngrok saat boot, tinggal saya bantu skripnya. Lanjut ke setup Telegram login atau backend FastAPI langsung aja bilang.
-
